@@ -10,4 +10,7 @@ Gunakan Flask/Django (berhasil)
 
 Ajax/Fetch untuk CRUD nya (gagal)
 
- CRUD memakai api ini di flask/django (gagal)
+CRUD memakai api ini di flask/django (gagal)
+
+
+Make with ChatGPT 🙂
