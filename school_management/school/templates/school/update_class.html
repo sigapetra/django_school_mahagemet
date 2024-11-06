@@ -1,0 +1,19 @@
+<!-- templates/school/update_class.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Class</title>
+</head>
+<body>
+    <h1>Update Class: {{ class_instance.name }}</h1>
+    <form action="{% url 'update_class' class_instance.id %}" method="POST" id="updateClassForm">
+        {% csrf_token %}
+        <label for="name">Class Name:</label>
+        <input type="text" id="name" name="name" value="{{ class_instance.name }}" required>
+        <button type="submit">Update Class</button>
+    </form>
+    <a href="{% url 'class_list' %}">Back to Class List</a>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Teacher List</title>
+    <script>
+        // Fetch teachers data from dummyjson API
+        function fetchTeachers() {
+            // First, fetch the user data to get the token
+            fetch('https://dummyjson.com/auth/me', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer YOUR_ACCESS_TOKEN_HERE',  // Pass JWT via Authorization header
+                },
+                credentials: 'include' // Include cookies (e.g., accessToken) in the request
+            })
+            .then(res => res.json())
+            .then(userData => {
+                console.log('User Data:', userData);  // Log user data to verify the token
+
+                // Once we have the user data, we fetch the teacher data
+                fetch('https://dummyjson.com/teachers', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${userData.accessToken}`,  // Use the token from the user data
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Teacher Data:', data);  // Log the response to verify structure
+                    const teacherList = document.getElementById('teacher-list');
+                    teacherList.innerHTML = '';  // Clear existing content
+
+                    // Loop through the teachers data and add them to the list
+                    data.teachers.forEach(teacher => {
+                        const teacherItem = document.createElement('li');
+                        teacherItem.innerHTML = `
+                            ${teacher.name}
+                            <a href="/update_teacher/${teacher.id}">Update</a> |
+                            <form action="/delete_teacher/${teacher.id}" method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit">Delete</button>
+                            </form>
+                        `;
+                        teacherList.appendChild(teacherItem);
+                    });
+                })
+                .catch(error => console.error('Error fetching teachers:', error));
+            })
+            .catch(error => console.error('Error fetching user data:', error));
+        }
+
+        // Call the function to fetch teachers when the page loads
+        window.onload = fetchTeachers;
+    </script>
+</head>
+<body>
+    <h1>Teacher List</h1>
+
+    <!-- Navigation link to go back to the index page -->
+    <a href="{% url 'index' %}">Back to Home</a>
+
+    <br><br>
+
+    <a href="{% url 'create_teacher' %}">Create Teacher</a>
+
+    <ul id="teacher-list">
+        <!-- Teacher data will be displayed here dynamically -->
+    </ul>
+</body>
+</html>

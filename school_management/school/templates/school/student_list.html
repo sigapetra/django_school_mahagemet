@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student List</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-4">Student List</h1>
+        
+        <div class="mb-3">
+            <a href="{% url 'create_student' %}" class="btn btn-primary">Create Student</a>
+            <a href="{% url 'index' %}" class="btn btn-secondary">Home</a> <!-- Replaced Logout with Home -->
+        </div>
+
+        <ul class="list-group">
+            {% for student in students %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ student.name }} - Class: {{ student.class_assigned }}
+                    <div>
+                        <a href="{% url 'update_student' student.id %}" class="btn btn-warning btn-sm">Update</a>
+                        <form action="{% url 'delete_student' student.id %}" method="POST" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </div>
+                </li>
+            {% empty %}
+                <li class="list-group-item">No students found.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.7/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

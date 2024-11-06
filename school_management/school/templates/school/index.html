@@ -1,0 +1,20 @@
+<!-- school/templates/school/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to the School Management Dashboard</h1>
+        <ul class="list-group">
+            <li class="list-group-item"><a href="{% url 'student_list' %}">View Students</a></li>
+            <li class="list-group-item"><a href="{% url 'class_list' %}">View Classes</a></li>
+            <li class="list-group-item"><a href="{% url 'teacher_list' %}">View Teachers</a></li>
+            <li class="list-group-item"><a href="{% url 'logout' %}">Logout</a></li>
+        </ul>
+    </div>
+</body>
+</html>

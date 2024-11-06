@@ -1,0 +1,18 @@
+<!-- templates/school/delete_class.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Class</title>
+</head>
+<body>
+    <h1>Delete Class: {{ class.name }}</h1>
+    <p>Are you sure you want to delete this class?</p>
+    <form action="{% url 'delete_class' class.id %}" method="POST">
+        {% csrf_token %}
+        <button type="submit">Yes, Delete</button>
+    </form>
+    <a href="{% url 'class_list' %}">Cancel</a>
+</body>
+</html>
