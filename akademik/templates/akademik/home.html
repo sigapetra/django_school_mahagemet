@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Proyek Sekolah</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; line-height: 1.6; }
+        .container { max-width: 960px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1, h2 { color: #0056b3; margin-bottom: 20px; }
+        .welcome-message { text-align: right; margin-bottom: 20px; font-size: 0.9em; }
+        .welcome-message a { color: #dc3545; text-decoration: none; font-weight: bold; }
+        .welcome-message a:hover { text-decoration: underline; }
+        .section-group { display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; }
+        .section { flex: 1; min-width: 300px; background-color: #e9ecef; padding: 20px; border-radius: 8px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+        .section h3 { color: #007bff; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+        ul { list-style-type: none; padding: 0; }
+        li { margin-bottom: 10px; }
+        li a { text-decoration: none; color: #007bff; font-weight: bold; }
+        li a:hover { text-decoration: underline; }
+        .admin-link { margin-top: 30px; text-align: center; }
+        .admin-link a { background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; }
+        .admin-link a:hover { background-color: #5a6268; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="welcome-message">
+            {% if user.is_authenticated %}
+                Halo, {{ user.username }}! | <a href="{% url 'logout' %}">Logout</a>
+            {% else %}
+                Anda belum login. <a href="{% url 'login' %}">Login di sini</a>
+            {% endif %}
+        </div>
+
+        <h1>Dashboard Proyek Sekolah</h1>
+        <p>Selamat datang di dashboard pengelolaan data sekolah. Pilih fitur di bawah ini:</p>
+
+        <div class="section-group">
+            <div class="section">
+                <h3>Data Sekolah Lokal (Menggunakan Database Django)</h3>
+                <ul>
+                    <li><a href="{% url 'daftar_kelas' %}">Lihat Daftar Semua Kelas</a></li>
+                    <li><a href="{% url 'daftar_semua' %}">Lihat Daftar Gabungan Siswa, Kelas & Guru</a></li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h3>CRUD Data Sekolah (Menggunakan API Django Lokal)</h3>
+                <p><i>Antarmuka CRUD interaktif yang terhubung ke database lokal Django Anda.</i></p>
+                <ul>
+                    <li><a href="{% url 'kelola_siswa_api' %}">Kelola Siswa</a></li>
+                    <li><a href="{% url 'kelola_guru_api' %}">Kelola Guru</a></li>
+                    <!-- Akan ditambahkan nanti: <li><a href="{% url 'kelola_kelas_api' %}">Kelola Kelas</a></li> -->
+                </ul>
+            </div>
+        </div>
+
+        <div class="section-group">
+            <div class="section">
+                <h3>CRUD Data Dummy (Menggunakan dummyjson.com API)</h3>
+                <p><i>Antarmuka CRUD interaktif yang terhubung ke API dummyjson.com. Perubahan tidak disimpan permanen.</i></p>
+                <ul>
+                    <li><a href="{% url 'crud_siswa_dummy' %}">CRUD Siswa (via dummyjson Users)</a></li>
+                    <!-- <li><a href="{% url 'crud_guru_dummy' %}">CRUD Guru (via dummyjson Users)</a></li>
+                    <li><a href="{% url 'crud_kelas_dummy' %}">CRUD Kelas (via dummyjson Posts)</a></li> -->
+                </ul>
+            </div>
+
+            <div class="section">
+                <h3>Akses Administratif</h3>
+                <p>Kelola data sekolah secara langsung melalui antarmuka admin Django.</p>
+                <ul>
+                    <li><a href="{% url 'admin:index' %}">Pergi ke Django Admin Panel</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

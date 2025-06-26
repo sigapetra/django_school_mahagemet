@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Kelas: {{ kelas.nama_kelas }}</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        h1, h2 { color: #0056b3; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        ul { list-style-type: none; padding: 0; }
+        li { margin-bottom: 5px; }
+        .back-link { display: block; margin-top: 20px; color: #007bff; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Detail Kelas: {{ kelas.nama_kelas }}</h1>
+        <p><strong>Tahun Ajaran:</strong> {{ kelas.tahun_ajaran }}</p>
+        {% if kelas.deskripsi %}
+            <p><strong>Deskripsi:</strong> {{ kelas.deskripsi }}</p>
+        {% endif %}
+
+        <h2>Siswa di Kelas Ini:</h2>
+        {% if siswa_di_kelas %}
+            <ul>
+                {% for siswa in siswa_di_kelas %}
+                    <li>{{ siswa.nama_lengkap }} (NIS: {{ siswa.NIS }})</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Belum ada siswa di kelas ini.</p>
+        {% endif %}
+
+        <h2>Guru Pengajar Kelas Ini:</h2>
+        {% if guru_pengajar %}
+            <ul>
+                {% for guru in guru_pengajar %}
+                    <li>{{ guru.nama_lengkap }} (Mata Pelajaran: {{ guru.mata_pelajaran }})</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Belum ada guru yang mengajar di kelas ini.</p>
+        {% endif %}
+
+        <a href="{% url 'daftar_kelas' %}" class="back-link">Kembali ke Daftar Kelas</a>
+    </div>
+</body>
+</html>

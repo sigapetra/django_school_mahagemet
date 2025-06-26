@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Kelas</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        h1 { color: #0056b3; }
+        ul { list-style-type: none; padding: 0; }
+        li { background-color: #fff; margin-bottom: 10px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        li a { text-decoration: none; color: #007bff; font-weight: bold; }
+        li a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Daftar Semua Kelas</h1>
+
+    {% if daftar_kelas %}
+        <ul>
+            {% for kelas in daftar_kelas %}
+                <li>
+                    <a href="{% url 'detail_kelas' kelas.id %}">
+                        {{ kelas.nama_kelas }} (Tahun Ajaran: {{ kelas.tahun_ajaran }})
+                    </a>
+                    {% if kelas.deskripsi %}
+                        <p>{{ kelas.deskripsi }}</p>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Belum ada data kelas yang tersedia.</p>
+    {% endif %}
+
+    <hr>
+    <p><a href="{% url 'daftar_semua' %}">Lihat Daftar Gabungan Siswa, Kelas & Guru</a></p>
+    <p><a href="{% url 'home' %}">Kembali ke Dashboard</a></p>
+</body>
+</html>

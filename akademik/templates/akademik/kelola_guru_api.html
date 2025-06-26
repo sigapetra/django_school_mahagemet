@@ -1,0 +1,297 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CRUD Guru (API Django)</title>
+        <style>
+            body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+            h1 { color: #0056b3; }
+            .container { max-width: 900px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+            #guru-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+            #guru-form input, #guru-form select, #guru-form button { padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+            #guru-form button { background-color: #28a745; color: white; border: none; cursor: pointer; }
+            #guru-form button:hover { background-color: #218838; }
+            #guru-list { margin-top: 20px; }
+            .guru-item { background-color: #e9ecef; padding: 10px; margin-bottom: 8px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+            .guru-item button { margin-left: 10px; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
+            .edit-btn { background-color: #ffc107; color: #333; border: none; }
+            .delete-btn { background-color: #dc3545; color: white; border: none; }
+            .edit-btn:hover { background-color: #e0a800; }
+            .delete-btn:hover { background-color: #c82333; }
+            .message { margin-top: 15px; padding: 10px; border-radius: 5px; }
+            .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+            .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Kelola Guru (API Django)</h1>
+            <div id="message" class="message" style="display:none;"></div>
+
+            <h2>Tambah / Edit Guru</h2>
+            <form id="guru-form">
+                <input type="hidden" id="guru-id">
+                <input type="text" id="guru-nip" placeholder="NIP Guru" required>
+                <input type="text" id="guru-nama-lengkap" placeholder="Nama Lengkap" required>
+                <input type="text" id="guru-mata-pelajaran" placeholder="Mata Pelajaran" required>
+                <!-- Dropdown untuk kelas yang diajar (multiple select) -->
+                <select id="guru-kelas-diajar" multiple required size="5">
+                    <!-- Opsi kelas akan dimuat secara dinamis oleh JavaScript -->
+                </select>
+                <small>Pilih multiple kelas dengan menekan Ctrl/Command + Klik</small>
+                <input type="date" id="guru-tanggal-lahir" placeholder="Tanggal Lahir">
+                <textarea id="guru-alamat" placeholder="Alamat" rows="3"></textarea>
+                <button type="submit" id="submit-btn">Tambah Guru</button>
+            </form>
+
+            <h2>Daftar Guru</h2>
+            <div id="guru-list">
+                <p>Memuat guru...</p>
+            </div>
+        </div>
+
+        <script>
+            // Gunakan URL API Django kamu
+            const API_GURU_URL = '/akademik/api/guru-api/'; // URL API Guru di Django
+            const API_KELAS_URL = '/akademik/api/kelas-api/'; // URL API Kelas di Django
+
+            const guruListDiv = document.getElementById('guru-list');
+            const guruForm = document.getElementById('guru-form');
+            const guruIdInput = document.getElementById('guru-id');
+            const guruNipInput = document.getElementById('guru-nip');
+            const guruNamaLengkapInput = document.getElementById('guru-nama-lengkap');
+            const guruMataPelajaranInput = document.getElementById('guru-mata-pelajaran');
+            const guruKelasDiajarSelect = document.getElementById('guru-kelas-diajar');
+            const guruTanggalLahirInput = document.getElementById('guru-tanggal-lahir');
+            const guruAlamatInput = document.getElementById('guru-alamat');
+            const submitButton = document.getElementById('submit-btn');
+            const messageDiv = document.getElementById('message');
+
+            // --- Fungsi Pembantu untuk Menampilkan Pesan ---
+            function showMessage(msg, type) {
+                messageDiv.textContent = msg;
+                messageDiv.className = `message ${type}`;
+                messageDiv.style.display = 'block';
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 3000); // Sembunyikan setelah 3 detik
+            }
+
+            // --- Fungsi untuk Mengambil Token CSRF ---
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+
+            // --- Fungsi untuk Mengisi Dropdown Kelas (untuk ManyToManyField) ---
+            async function loadKelasOptionsForGuru() {
+                try {
+                    const response = await fetch(API_KELAS_URL);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const kelasData = await response.json();
+
+                    guruKelasDiajarSelect.innerHTML = ''; // Reset
+                    kelasData.forEach(kelas => {
+                        const option = document.createElement('option');
+                        option.value = kelas.id;
+                        option.textContent = kelas.nama_kelas;
+                        guruKelasDiajarSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error loading kelas options for guru:', error);
+                    showMessage('Gagal memuat daftar kelas untuk guru.', 'error');
+                }
+            }
+
+            // --- Fungsi READ (GET) Guru ---
+            async function fetchGuru() {
+                guruListDiv.innerHTML = '<p>Memuat guru...</p>'; // Reset
+                try {
+                    const response = await fetch(API_GURU_URL);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    displayGuru(data); // DRF langsung mengembalikan array objek
+                } catch (error) {
+                    console.error('Error fetching guru:', error);
+                    guruListDiv.innerHTML = '<p class="error">Gagal memuat guru. Coba lagi nanti.</p>';
+                }
+            }
+
+            function displayGuru(guruList) {
+                guruListDiv.innerHTML = ''; // Kosongkan daftar yang ada
+                if (guruList && guruList.length > 0) {
+                    guruList.forEach(guru => {
+                        const guruItem = document.createElement('div');
+                        guruItem.className = 'guru-item';
+                        const kelasDiajarText = guru.kelas_diajar_nama && guru.kelas_diajar_nama.length > 0 ?
+                                               `Mengajar: ${guru.kelas_diajar_nama.join(', ')}` :
+                                               'Belum mengajar kelas manapun';
+
+                        guruItem.innerHTML = `
+                            <span>
+                                <strong>${guru.nama_lengkap}</strong> (NIP: ${guru.NIP})<br>
+                                Mata Pelajaran: ${guru.mata_pelajaran}<br>
+                                ${kelasDiajarText}
+                            </span>
+                            <div>
+                                <button class="edit-btn" data-id="${guru.id}">Edit</button>
+                                <button class="delete-btn" data-id="${guru.id}">Hapus</button>
+                            </div>
+                        `;
+                        guruListDiv.appendChild(guruItem);
+                    });
+                } else {
+                    guruListDiv.innerHTML = '<p>Tidak ada guru ditemukan.</p>';
+                }
+            }
+
+            // --- Fungsi CREATE (POST) / UPDATE (PUT) Guru ---
+            guruForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const id = guruIdInput.value;
+                const nip = guruNipInput.value;
+                const nama_lengkap = guruNamaLengkapInput.value;
+                const mata_pelajaran = guruMataPelajaranInput.value;
+                const kelas_diajar = Array.from(guruKelasDiajarSelect.selectedOptions).map(option => parseInt(option.value));
+                const tanggal_lahir = guruTanggalLahirInput.value;
+                const alamat = guruAlamatInput.value;
+
+                const guruData = {
+                    NIP: nip,
+                    nama_lengkap: nama_lengkap,
+                    mata_pelajaran: mata_pelajaran,
+                    kelas_diajar: kelas_diajar,
+                    tanggal_lahir: tanggal_lahir || null,
+                    alamat: alamat || null,
+                };
+
+                let url = API_GURU_URL;
+                let method = 'POST';
+
+                if (id) {
+                    url = `${API_GURU_URL}${id}/`;
+                    method = 'PUT';
+                }
+
+                try {
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken,
+                        },
+                        body: JSON.stringify(guruData),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error('Error response data:', errorData);
+                        throw new Error(`HTTP error! status: ${response.status} - ${JSON.stringify(errorData)}`);
+                    }
+
+                    const result = await response.json();
+                    console.log('Operation successful:', result);
+                    showMessage(`Guru ${method === 'POST' ? 'ditambahkan' : 'diperbarui'}! (ID: ${result.id})`, 'success');
+
+                    guruForm.reset();
+                    guruIdInput.value = '';
+                    submitButton.textContent = 'Tambah Guru';
+
+                    fetchGuru();
+
+                } catch (error) {
+                    console.error('Error during operation:', error);
+                    showMessage(`Gagal ${method === 'POST' ? 'menambah' : 'memperbarui'} guru.`, 'error');
+                }
+            });
+
+            // --- Fungsi DELETE Guru ---
+            guruListDiv.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('delete-btn')) {
+                    const id = e.target.dataset.id;
+                    if (confirm(`Yakin ingin menghapus guru dengan ID: ${id}?`)) {
+                        try {
+                            const response = await fetch(`${API_GURU_URL}${id}/`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRFToken': csrftoken,
+                                },
+                            });
+
+                            if (response.status !== 204 && !response.ok) {
+                                const errorData = await response.json();
+                                throw new Error(`HTTP error! status: ${response.status} - ${JSON.stringify(errorData)}`);
+                            }
+
+                            console.log('Delete successful');
+                            showMessage('Guru berhasil dihapus!', 'success');
+                            fetchGuru();
+                        } catch (error) {
+                            console.error('Error deleting guru:', error);
+                            showMessage('Gagal menghapus guru.', 'error');
+                        }
+                    }
+                }
+
+                // --- Fungsi EDIT (Mengisi Form) Guru ---
+                if (e.target.classList.contains('edit-btn')) {
+                    const idToEdit = e.target.dataset.id;
+                    try {
+                        const response = await fetch(`${API_GURU_URL}${idToEdit}/`);
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        const guru = await response.json();
+
+                        guruIdInput.value = guru.id;
+                        guruNipInput.value = guru.NIP;
+                        guruNamaLengkapInput.value = guru.nama_lengkap;
+                        guruMataPelajaranInput.value = guru.mata_pelajaran;
+                        guruTanggalLahirInput.value = guru.tanggal_lahir || '';
+                        guruAlamatInput.value = guru.alamat || '';
+
+                        Array.from(guruKelasDiajarSelect.options).forEach(option => {
+                            option.selected = false;
+                        });
+                        if (guru.kelas_diajar && guru.kelas_diajar.length > 0) {
+                            guru.kelas_diajar.forEach(kelasId => {
+                                const option = guruKelasDiajarSelect.querySelector(`option[value="${kelasId}"]`);
+                                if (option) {
+                                    option.selected = true;
+                                }
+                            });
+                        }
+
+                        submitButton.textContent = 'Perbarui Guru';
+                        showMessage('Form siap untuk diedit.', 'success');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                    } catch (error) {
+                        console.error('Error loading guru for edit:', error);
+                        showMessage('Gagal memuat data guru untuk diedit.', 'error');
+                    }
+                }
+            });
+
+            document.addEventListener('DOMContentLoaded', () => {
+                loadKelasOptionsForGuru();
+                fetchGuru();
+            });
+        </script>
+        <a href="{% url 'home' %}" class="back-to-home-link">Kembali ke Dashboard</a>
+    </body>
+    </html>
+    

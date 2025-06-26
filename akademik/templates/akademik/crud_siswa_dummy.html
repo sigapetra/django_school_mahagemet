@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Siswa (Dummyjson.com)</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        h1 { color: #0056b3; }
+        .container { max-width: 900px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #siswa-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        #siswa-form input, #siswa-form button { padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        #siswa-form button { background-color: #28a745; color: white; border: none; cursor: pointer; }
+        #siswa-form button:hover { background-color: #218838; }
+        #siswa-list { margin-top: 20px; }
+        .siswa-item { background-color: #e9ecef; padding: 10px; margin-bottom: 8px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .siswa-item button { margin-left: 10px; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
+        .edit-btn { background-color: #ffc107; color: #333; border: none; }
+        .delete-btn { background-color: #dc3545; color: white; border: none; }
+        .edit-btn:hover { background-color: #e0a800; }
+        .delete-btn:hover { background-color: #c82333; }
+        .message { margin-top: 15px; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Kelola Siswa (Dummyjson.com/users API)</h1>
+        <div id="message" class="message" style="display:none;"></div>
+
+        <h2>Tambah / Edit Siswa</h2>
+        <form id="siswa-form">
+            <input type="hidden" id="siswa-id">
+            <input type="text" id="siswa-nis" placeholder="NIS (Username)" required>
+            <input type="text" id="siswa-nama-depan" placeholder="Nama Depan" required>
+            <input type="text" id="siswa-nama-belakang" placeholder="Nama Belakang" required>
+            <input type="email" id="siswa-email" placeholder="Email" required>
+            <input type="text" id="siswa-kelas" placeholder="Kelas (contoh: X IPA 1)" required>
+            <button type="submit" id="submit-btn">Tambah Siswa</button>
+        </form>
+
+        <h2>Daftar Siswa</h2>
+        <div id="siswa-list">
+            <p>Memuat siswa...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://dummyjson.com/users'; // Menggunakan endpoint users
+        const siswaListDiv = document.getElementById('siswa-list');
+        const siswaForm = document.getElementById('siswa-form');
+        const siswaIdInput = document.getElementById('siswa-id');
+        const siswaNisInput = document.getElementById('siswa-nis'); // Ini akan jadi username
+        const siswaNamaDepanInput = document.getElementById('siswa-nama-depan');
+        const siswaNamaBelakangInput = document.getElementById('siswa-nama-belakang');
+        const siswaEmailInput = document.getElementById('siswa-email');
+        const siswaKelasInput = document.getElementById('siswa-kelas'); // Ini akan jadi teks biasa
+        const submitButton = document.getElementById('submit-btn');
+        const messageDiv = document.getElementById('message');
+
+        // --- Fungsi Pembantu untuk Menampilkan Pesan ---
+        function showMessage(msg, type) {
+            messageDiv.textContent = msg;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000); // Sembunyikan setelah 3 detik
+        }
+
+        // --- Fungsi READ (GET) Siswa ---
+        async function fetchSiswa() {
+            siswaListDiv.innerHTML = '<p>Memuat siswa...</p>'; // Reset
+            try {
+                const response = await fetch(API_BASE_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                // dummyjson.com/users mengembalikan objek dengan properti 'users'
+                displaySiswa(data.users); 
+            } catch (error) {
+                console.error('Error fetching siswa:', error);
+                siswaListDiv.innerHTML = '<p class="error">Gagal memuat siswa. Coba lagi nanti.</p>';
+            }
+        }
+
+        function displaySiswa(siswaList) {
+            siswaListDiv.innerHTML = ''; // Kosongkan daftar yang ada
+            if (siswaList && siswaList.length > 0) {
+                siswaList.forEach(siswa => {
+                    const siswaItem = document.createElement('div');
+                    siswaItem.className = 'siswa-item';
+                    // Mapping field dummyjson ke tampilan Siswa
+                    siswaItem.innerHTML = `
+                        <span>
+                            <strong>${siswa.firstName} ${siswa.lastName}</strong> (NIS: ${siswa.username})<br>
+                            Email: ${siswa.email}<br>
+                            Kelas: ${siswa.university || 'Tidak Diketahui'} <!-- Memanfaatkan field university sebagai placeholder kelas -->
+                        </span>
+                        <div>
+                            <button class="edit-btn" data-id="${siswa.id}"
+                                data-nis="${siswa.username}"
+                                data-nama-depan="${siswa.firstName}"
+                                data-nama-belakang="${siswa.lastName}"
+                                data-email="${siswa.email}"
+                                data-kelas="${siswa.university || ''}"
+                            >Edit</button>
+                            <button class="delete-btn" data-id="${siswa.id}">Hapus</button>
+                        </div>
+                    `;
+                    siswaListDiv.appendChild(siswaItem);
+                });
+            } else {
+                siswaListDiv.innerHTML = '<p>Tidak ada siswa ditemukan.</p>';
+            }
+        }
+
+        // --- Fungsi CREATE (POST) / UPDATE (PUT) Siswa ---
+        siswaForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = siswaIdInput.value;
+            const username = siswaNisInput.value;
+            const firstName = siswaNamaDepanInput.value;
+            const lastName = siswaNamaBelakangInput.value;
+            const email = siswaEmailInput.value;
+            const university = siswaKelasInput.value; // Memanfaatkan university sebagai kelas
+
+            const siswaData = {
+                username: username,
+                firstName: firstName,
+                lastName: lastName,
+                email: email,
+                university: university // Kirim field ini
+                // dummyjson tidak support field kustom lain untuk persistensi
+            };
+
+            let url = API_BASE_URL;
+            let method = 'POST';
+
+            if (id) { // Jika ada ID, berarti ini operasi UPDATE
+                url = `${API_BASE_URL}/${id}`;
+                method = 'PUT';
+            } else { // Jika tidak ada ID, berarti operasi CREATE
+                url = `${API_BASE_URL}/add`; // Endpoint khusus untuk POST users di dummyjson
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(siswaData),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Operation successful:', result);
+                showMessage(`Siswa ${method === 'POST' ? 'ditambahkan' : 'diperbarui'}! (ID: ${result.id || 'N/A'})`, 'success');
+
+                // Reset form
+                siswaForm.reset();
+                siswaIdInput.value = ''; // Hapus ID tersembunyi
+                submitButton.textContent = 'Tambah Siswa'; // Kembali ke mode tambah
+
+                // Meskipun dummyjson tidak menyimpan, kita bisa anggap sukses dan refresh list
+                fetchSiswa();
+
+            } catch (error) {
+                console.error('Error during operation:', error);
+                showMessage(`Gagal ${method === 'POST' ? 'menambah' : 'memperbarui'} siswa.`, 'error');
+            }
+        });
+
+        // --- Fungsi DELETE Siswa ---
+        siswaListDiv.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const id = e.target.dataset.id;
+                if (confirm(`Yakin ingin menghapus siswa dengan ID: ${id}?`)) {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/${id}`, {
+                            method: 'DELETE',
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+                        console.log('Delete successful:', result);
+                        showMessage('Siswa berhasil dihapus (dummy)!', 'success');
+                        fetchSiswa(); // Refresh the list
+                    } catch (error) {
+                        console.error('Error deleting siswa:', error);
+                        showMessage('Gagal menghapus siswa.', 'error');
+                    }
+                }
+            }
+
+            // --- Fungsi EDIT (Mengisi Form) Siswa ---
+            if (e.target.classList.contains('edit-btn')) {
+                const btn = e.target;
+                siswaIdInput.value = btn.dataset.id;
+                siswaNisInput.value = btn.dataset.nis;
+                siswaNamaDepanInput.value = btn.dataset.namaDepan;
+                siswaNamaBelakangInput.value = btn.dataset.namaBelakang;
+                siswaEmailInput.value = btn.dataset.email;
+                siswaKelasInput.value = btn.dataset.kelas;
+                submitButton.textContent = 'Perbarui Siswa';
+                showMessage('Form siap untuk diedit.', 'success');
+                window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll ke atas form
+            }
+        });
+
+        // --- Panggil saat halaman pertama kali dimuat ---
+        document.addEventListener('DOMContentLoaded', fetchSiswa);
+    </script>
+</body>
+</html>

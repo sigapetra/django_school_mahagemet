@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Pengguna Dummy (Fetch API)</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        h1 { color: #0056b3; }
+        .container { max-width: 900px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #user-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        #user-form input, #user-form button { padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        #user-form button { background-color: #28a745; color: white; border: none; cursor: pointer; }
+        #user-form button:hover { background-color: #218838; }
+        #user-list { margin-top: 20px; }
+        .user-item { background-color: #e9ecef; padding: 10px; margin-bottom: 8px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .user-item button { margin-left: 10px; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
+        .edit-btn { background-color: #ffc107; color: #333; border: none; }
+        .delete-btn { background-color: #dc3545; color: white; border: none; }
+        .edit-btn:hover { background-color: #e0a800; }
+        .delete-btn:hover { background-color: #c82333; }
+        .message { margin-top: 15px; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Kelola Pengguna (Dummy JSON API)</h1>
+        <div id="message" class="message" style="display:none;"></div>
+
+        <h2>Tambah / Edit Pengguna</h2>
+        <form id="user-form">
+            <input type="hidden" id="user-id">
+            <input type="text" id="user-firstName" placeholder="Nama Depan" required>
+            <input type="text" id="user-lastName" placeholder="Nama Belakang" required>
+            <input type="email" id="user-email" placeholder="Email" required>
+            <input type="text" id="user-username" placeholder="Username" required>
+            <button type="submit" id="submit-btn">Tambah Pengguna</button>
+        </form>
+
+        <h2>Daftar Pengguna</h2>
+        <div id="user-list">
+            <p>Memuat pengguna...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://dummyjson.com/users';
+        const userListDiv = document.getElementById('user-list');
+        const userForm = document.getElementById('user-form');
+        const userIdInput = document.getElementById('user-id');
+        const userFirstNameInput = document.getElementById('user-firstName');
+        const userLastNameInput = document.getElementById('user-lastName');
+        const userEmailInput = document.getElementById('user-email');
+        const userUsernameInput = document.getElementById('user-username');
+        const submitButton = document.getElementById('submit-btn');
+        const messageDiv = document.getElementById('message');
+
+        // --- Fungsi Pembantu untuk Menampilkan Pesan ---
+        function showMessage(msg, type) {
+            messageDiv.textContent = msg;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000); // Sembunyikan setelah 3 detik
+        }
+
+        // --- Fungsi READ (GET) ---
+        async function fetchUsers() {
+            userListDiv.innerHTML = '<p>Memuat pengguna...</p>'; // Reset
+            try {
+                const response = await fetch(API_BASE_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                displayUsers(data.users); // dummyjson.com mengembalikan objek dengan properti 'users'
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                userListDiv.innerHTML = '<p class="error">Gagal memuat pengguna. Coba lagi nanti.</p>';
+            }
+        }
+
+        function displayUsers(users) {
+            userListDiv.innerHTML = ''; // Kosongkan daftar yang ada
+            if (users && users.length > 0) {
+                users.forEach(user => {
+                    const userItem = document.createElement('div');
+                    userItem.className = 'user-item';
+                    userItem.innerHTML = `
+                        <span>
+                            <strong>${user.firstName} ${user.lastName}</strong> (${user.username})<br>
+                            Email: ${user.email}
+                        </span>
+                        <div>
+                            <button class="edit-btn"
+                                data-id="${user.id}"
+                                data-firstName="${user.firstName}"
+                                data-lastName="${user.lastName}"
+                                data-email="${user.email}"
+                                data-username="${user.username}">
+                                Edit
+                            </button>
+                            <button class="delete-btn" data-id="${user.id}">Hapus</button>
+                        </div>
+                    `;
+                    userListDiv.appendChild(userItem);
+                });
+            } else {
+                userListDiv.innerHTML = '<p>Tidak ada pengguna ditemukan.</p>';
+            }
+        }
+
+        // --- Fungsi CREATE (POST) / UPDATE (PUT) ---
+        userForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = userIdInput.value;
+            const firstName = userFirstNameInput.value;
+            const lastName = userLastNameInput.value;
+            const email = userEmailInput.value;
+            const username = userUsernameInput.value;
+
+            const userData = {
+                firstName: firstName,
+                lastName: lastName,
+                email: email,
+                username: username
+                // Catatan: dummyjson tidak menyimpan password untuk operasi ini
+            };
+
+            let url = API_BASE_URL;
+            let method = 'POST';
+
+            if (id) { // Jika ada ID, berarti ini operasi UPDATE
+                url = `${API_BASE_URL}/${id}`;
+                method = 'PUT';
+            } else { // Jika tidak ada ID, berarti operasi CREATE
+                url = `${API_BASE_URL}/add`; // Endpoint khusus untuk POST di dummyjson
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Operation successful:', result);
+                showMessage(`Pengguna ${method === 'POST' ? 'ditambahkan' : 'diperbarui'}! (ID: ${result.id})`, 'success');
+
+                // Reset form
+                userForm.reset();
+                userIdInput.value = ''; // Hapus ID tersembunyi
+                submitButton.textContent = 'Tambah Pengguna'; // Kembali ke mode tambah
+
+                // Meskipun dummyjson tidak menyimpan, kita bisa anggap sukses dan refresh list
+                fetchUsers();
+
+            } catch (error) {
+                console.error('Error during operation:', error);
+                showMessage(`Gagal ${method === 'POST' ? 'menambah' : 'memperbarui'} pengguna.`, 'error');
+            }
+        });
+
+        // --- Fungsi DELETE ---
+        userListDiv.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const id = e.target.dataset.id;
+                if (confirm(`Yakin ingin menghapus pengguna dengan ID: ${id}?`)) {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/${id}`, {
+                            method: 'DELETE',
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+                        console.log('Delete successful:', result);
+                        showMessage('Pengguna berhasil dihapus (dummy)!', 'success');
+                        fetchUsers(); // Refresh the list
+                    } catch (error) {
+                        console.error('Error deleting user:', error);
+                        showMessage('Gagal menghapus pengguna.', 'error');
+                    }
+                }
+            }
+
+            // --- Fungsi EDIT (Mengisi Form) ---
+            if (e.target.classList.contains('edit-btn')) {
+                const btn = e.target;
+                userIdInput.value = btn.dataset.id;
+                userFirstNameInput.value = btn.dataset.firstname; // Perhatikan case 'firstName' vs 'firstname' di dataset
+                userLastNameInput.value = btn.dataset.lastname;
+                userEmailInput.value = btn.dataset.email;
+                userUsernameInput.value = btn.dataset.username;
+                submitButton.textContent = 'Perbarui Pengguna';
+                showMessage('Form siap untuk diedit.', 'success');
+                window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll ke atas form
+            }
+        });
+
+
+        // --- Panggil saat halaman pertama kali dimuat ---
+        document.addEventListener('DOMContentLoaded', fetchUsers);
+    </script>
+</body>
+</html>
